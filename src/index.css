@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS for Antd components that need dark mode override */
+@layer components {
+  .ant-tooltip {
+    @apply max-w-md;
+  }
+  
+  .ant-tooltip .ant-tooltip-inner {
+    @apply max-w-none break-all;
+  }
+  
+  @media (max-width: 768px) {
+    html, body {
+      @apply text-xs;
+    }
+  }
+}
