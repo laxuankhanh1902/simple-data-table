@@ -33,31 +33,37 @@ const SearchBar: React.FC<SearchBarProps> = ({
   }, [handleSearch]);
 
   return (
-    <div className="w-full">
+    <div className="relative w-full">
+      {/* Professional Search Input */}
       <Input
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         onKeyPress={handleKeyPress}
-        placeholder={placeholder}
-        prefix={<SearchOutlined className="text-gray-400" />}
-        className="text-white placeholder-gray-400"
+        placeholder="Search records... (e.g., status:active, user.name:John, tags:premium)"
+        prefix={
+          <SearchOutlined className="text-gray-400 text-lg mr-1" />
+        }
+        className="enterprise-search"
         style={{ 
+          height: '40px',
           borderRadius: '8px',
-          padding: '8px 12px',
-          boxShadow: 'none'
+          fontSize: '14px',
+          backgroundColor: '#1f2937',
+          border: 'none',
+          color: '#e5e7eb',
+          boxShadow: 'none',
+          transition: 'all 0.2s ease-in-out'
         }}
         suffix={
-          <Space>
-            {searchQuery && (
-              <Button
-                type="text"
-                icon={<ClearOutlined />}
-                onClick={handleClear}
-                size="small"
-                className="text-gray-400 hover:text-white"
-              />
-            )}
-          </Space>
+          searchQuery && (
+            <Button
+              type="text"
+              icon={<ClearOutlined />}
+              onClick={handleClear}
+              size="small"
+              className="text-gray-400 hover:text-gray-300 hover:bg-gray-700 w-7 h-7 flex items-center justify-center rounded transition-colors duration-150"
+            />
+          )
         }
       />
     </div>

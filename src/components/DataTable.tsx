@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Table, Tooltip, Tag, Space, Drawer, Tabs, Button, Alert } from 'antd';
+import { Table, Tooltip, Tag, Space, Drawer, Tabs, Button, Alert, Modal } from 'antd';
 import { CloseOutlined, LeftOutlined, RightOutlined, PlusOutlined } from '@ant-design/icons';
 import type { DataRow, Filter, ColumnConfig } from '../types';
 import { getNestedValue, formatValue, truncateText, applyFilters, applySearchQuery } from '../utils/dataUtils';
@@ -27,7 +27,7 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
   const [additionalColumns, setAdditionalColumns] = useState<ColumnConfig[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
-  const [showQuickFilter, setShowQuickFilter] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
   // Define base column keys to avoid circular dependency
   const baseColumnKeys = useMemo(() => [
@@ -72,19 +72,19 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
     }
   }, [baseColumnKeys, visibleColumns.length]);
 
-  // Close filter panel on Escape key
+  // Close filter modal on Escape key
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && showQuickFilter) {
-        setShowQuickFilter(false);
+      if (event.key === 'Escape' && showFilterModal) {
+        setShowFilterModal(false);
       }
     };
 
-    if (showQuickFilter) {
+    if (showFilterModal) {
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [showQuickFilter]);
+  }, [showFilterModal]);
 
   const filteredData = useMemo(() => {
     try {
@@ -149,8 +149,8 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
       if (exists) return prev;
       return [...prev, filter];
     });
-    // Hide the filter panel after adding a filter
-    setShowQuickFilter(false);
+    // Hide the filter modal after adding a filter
+    setShowFilterModal(false);
   }, []);
 
   const handleRemoveFilter = useCallback((index: number) => {
@@ -568,49 +568,49 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
-        <div className="max-w-full mx-auto space-y-6 px-4">
-
-          {/* Kibana-style Search Bar */}
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4 shadow-xl mb-6">
-            <div className="flex items-center gap-4">
-              {/* Search Input */}
-              <div className="flex-1">
-                <SearchBar 
-                  onSearch={handleSearch}
-                />
+      <div className="space-y-6">
+        {/* Page Title */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold text-white mb-2">Data Explorer</h1>
+              <p className="text-gray-400 text-lg">Analyze and visualize enterprise data with advanced filtering and insights</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-600">
+                <span className="text-gray-300 text-sm">Total Records: </span>
+                <span className="text-white font-semibold">{data.length.toLocaleString()}</span>
               </div>
+              <div className="bg-blue-900 px-3 py-1.5 rounded-lg border border-blue-700">
+                <span className="text-blue-300 text-sm">Filtered: </span>
+                <span className="text-blue-100 font-semibold">{filteredData.length.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              {/* Add Filter Button */}
-              <Button
-                type="text"
-                icon={<PlusOutlined />}
-                className={`text-gray-300 hover:text-white hover:bg-gray-800 border rounded-lg px-4 py-2 ${
-                  showQuickFilter 
-                    ? 'border-blue-500 bg-gray-800 text-white' 
-                    : 'border-gray-600 hover:border-blue-500'
-                }`}
-                onClick={() => setShowQuickFilter(!showQuickFilter)}
-              >
-                Add filter
-              </Button>
-
-              {/* Clear All Filters and Controls */}
-              <div className="flex items-center gap-2">
-                {(filters.length > 0 || searchQuery) && (
-                  <Button
-                    type="text"
-                    className="text-gray-300 hover:text-white hover:bg-gray-800 border border-gray-600 hover:border-red-500 rounded-lg px-3 py-2"
-                    onClick={() => {
-                      setFilters([]);
-                      setSearchQuery('');
-                      setShowQuickFilter(false);
-                    }}
-                  >
-                    Clear all
-                  </Button>
-                )}
+        {/* Professional Data Panel */}
+        <div className="bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-600">
+          {/* Enhanced Control Bar */}
+          <div className="bg-gray-750 px-6 py-4 border-b border-gray-600">
+            <div className="flex items-center justify-between">
+              {/* Left Side - Search and Filter */}
+              <div className="flex items-center gap-4">
+                <div className="w-96">
+                  <SearchBar onSearch={handleSearch} />
+                </div>
                 
+                <Button
+                  icon={<PlusOutlined />}
+                  onClick={() => setShowFilterModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 border-blue-500 text-white rounded-md px-4 py-2 h-9 text-sm font-medium shadow-sm transition-all duration-200"
+                >
+                  Add filter
+                </Button>
+              </div>
+              
+              {/* Right Side - View and Column Controls */}
+              <div className="flex items-center gap-3">
                 <ViewsController
                   currentFilters={filters}
                   currentColumns={allColumns.map(col => col.key)}
@@ -635,121 +635,153 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
                 />
               </div>
             </div>
+
+            {/* Active Filters - Always show if there are filters or columns */}
+            {(filters.length > 0 || additionalColumns.length > 0) && (
+              <div className="mt-4 pt-4 border-t border-gray-600">
+                <FilterTags 
+                  filters={filters} 
+                  onRemove={handleRemoveFilter}
+                  additionalColumns={additionalColumns}
+                  onRemoveColumn={handleRemoveColumn}
+                />
+              </div>
+            )}
           </div>
 
-          {/* Advanced Filters Panel */}
-          {showQuickFilter && (
-            <div className="mb-6">
-              <FilterPanel
-                data={data}
-                filters={filters}
-                onAddFilter={handleAddFilter}
-                onRemoveFilter={handleRemoveFilterById}
-                onClearFilters={handleClearFilters}
-              />
-            </div>
-          )}
-
-          {/* Active Filters & Status */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex-1">
-              <FilterTags 
-                filters={filters} 
-                onRemove={handleRemoveFilter}
-                additionalColumns={additionalColumns}
-                onRemoveColumn={handleRemoveColumn}
-              />
-            </div>
-            
-            <div className="text-sm text-gray-400 ml-4">
-              Showing <span className="font-semibold text-blue-400">{filteredData.length}</span> of {data.length} records
-              {filters.length > 0 && (
-                <span className="ml-2 text-purple-400">
-                  ({filters.length} filter{filters.length !== 1 ? 's' : ''} applied)
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Full Width Data Table */}
-          <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 shadow-2xl">
+          {/* Professional Data Table */}
+          <div className="bg-gray-800">
             <Table
               columns={visibleColumnsData}
               dataSource={filteredData}
               rowKey="id"
-              scroll={{ x: 1500, y: 600 }}
+              scroll={{ x: 1500 }}
               onRow={(record) => ({
                 onClick: () => handleRowClick(record),
-                style: { cursor: 'pointer' }
+                className: 'hover:bg-gray-750 cursor-pointer transition-colors duration-150'
               })}
               pagination={{
-                pageSize: 50,
+                pageSize: 25,
                 showSizeChanger: true,
                 showQuickJumper: true,
+                pageSizeOptions: ['10', '25', '50', '100'],
                 showTotal: (total, range) => 
-                  `${range[0]}-${range[1]} of ${total} items`,
+                  `Showing ${range[0]}-${range[1]} of ${total} results`,
+                className: 'enterprise-pagination'
               }}
-              size="small"
-              bordered
-              className="dark-table"
+              size="middle"
+              className="enterprise-table"
+              showHeader={true}
             />
           </div>
         </div>
       </div>
 
+      {/* Filter Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <PlusOutlined className="text-blue-500" />
+            <span className="text-white text-lg font-semibold">Add Filter</span>
+          </div>
+        }
+        open={showFilterModal}
+        onCancel={() => setShowFilterModal(false)}
+        footer={null}
+        width={800}
+        centered
+        className="filter-modal"
+        styles={{
+          content: {
+            background: '#1f2937',
+            border: '1px solid #374151'
+          },
+          header: {
+            background: '#1f2937',
+            borderBottom: '1px solid #374151'
+          }
+        }}
+      >
+        <div className="p-2">
+          <FilterPanel
+            data={data}
+            filters={filters}
+            onAddFilter={handleAddFilter}
+            onRemoveFilter={handleRemoveFilterById}
+            onClearFilters={handleClearFilters}
+          />
+        </div>
+      </Modal>
+
         <Drawer
           title={
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span>
-                  Record Details
-                </span>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  {currentRecordIndex + 1} of {filteredData.length}
-                </span>
+            <div className="flex items-center justify-between bg-gray-800 border-b border-gray-600 -mx-6 -mt-6 px-6 py-5">
+              <div>
+                <h3 className="text-white text-xl font-semibold mb-1">Record Inspector</h3>
+                <p className="text-gray-400 text-sm mb-0">
+                  Viewing record {currentRecordIndex + 1} of {filteredData.length}
+                </p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="flex items-center gap-3">
                 <Button 
                   type="text" 
                   icon={<LeftOutlined />} 
                   onClick={handleNavigatePrevious}
                   disabled={currentRecordIndex <= 0}
-                  size="small"
-                  title="Previous record"
+                  size="middle"
+                  className="text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-gray-500 disabled:opacity-30 rounded-md px-3"
                 />
                 <Button 
                   type="text" 
                   icon={<RightOutlined />} 
                   onClick={handleNavigateNext}
                   disabled={currentRecordIndex >= filteredData.length - 1}
-                  size="small"
-                  title="Next record"
+                  size="middle"
+                  className="text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-gray-500 disabled:opacity-30 rounded-md px-3"
                 />
-                <div style={{ width: '1px', height: '16px', background: 'var(--border-color)', margin: '0 4px' }} />
+                <div className="w-px h-6 bg-gray-600 mx-1"></div>
                 <Button 
                   type="text" 
                   icon={<CloseOutlined />} 
                   onClick={handleCloseDrawer}
-                  size="small"
-                  title="Close"
+                  size="middle"
+                  className="text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-gray-500 rounded-md px-3"
                 />
               </div>
             </div>
           }
           placement="right"
-          width={600}
+          width={750}
           open={drawerVisible}
           onClose={handleCloseDrawer}
           closable={false}
+          className="enterprise-drawer"
           styles={{
-            body: { padding: '20px' },
+            body: { 
+              padding: '32px',
+              background: '#111827',
+              color: '#ffffff'
+            },
+            header: {
+              padding: '0',
+              border: 'none',
+              background: 'transparent'
+            }
           }}
         >
           <ErrorBoundary>
             <Tabs 
               items={detailTabs}
               defaultActiveKey="readable"
-              className="drawer-tabs"
+              className="enterprise-tabs"
+              size="large"
+              tabBarStyle={{
+                marginBottom: '24px',
+                borderBottom: '1px solid #374151',
+                fontSize: '15px',
+                background: '#111827',
+                fontWeight: '500'
+              }}
             />
           </ErrorBoundary>
         </Drawer>

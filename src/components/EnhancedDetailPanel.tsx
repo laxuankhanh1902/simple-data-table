@@ -6,7 +6,7 @@ import {
 import { 
   PlusOutlined, MinusOutlined, FilterOutlined, CopyOutlined, 
   SearchOutlined, EyeOutlined, BookOutlined, NumberOutlined,
-  CalendarOutlined, LinkOutlined, FileTextOutlined
+  CalendarOutlined, LinkOutlined, FileTextOutlined, DownOutlined, RightOutlined
 } from '@ant-design/icons';
 import type { DataRow, Filter } from '../types';
 import { flattenObject, generateFilterLabel } from '../utils/dataUtils';
@@ -35,6 +35,7 @@ const EnhancedDetailPanel: React.FC<EnhancedDetailPanelProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
+  const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
 
   const flattenedData = useMemo(() => {
     if (!data) return {};
@@ -181,6 +182,18 @@ const EnhancedDetailPanel: React.FC<EnhancedDetailPanelProps> = ({
     } catch (error) {
       message.error('Failed to copy field name');
     }
+  }, []);
+
+  const toggleExpanded = useCallback((fieldPath: string) => {
+    setExpandedFields(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fieldPath)) {
+        newSet.delete(fieldPath);
+      } else {
+        newSet.add(fieldPath);
+      }
+      return newSet;
+    });
   }, []);
 
   const renderValue = (value: any): React.ReactNode => {
@@ -335,153 +348,347 @@ const EnhancedDetailPanel: React.FC<EnhancedDetailPanelProps> = ({
     );
   }
 
+  // Helper function to render data in tree-like format with expand/collapse and actions
+  const renderTreeValue = (key: string, value: any, level: number = 0, parentPath: string = ''): React.ReactNode => {
+    const indent = level * 24;
+    const { icon, color } = getFieldType(value);
+    const fieldPath = parentPath ? `${parentPath}.${key}` : key;
+    const isExpanded = expandedFields.has(fieldPath);
+    const isColumnAdded = existingColumns.includes(fieldPath);
+    const isBaseColumn = baseColumns.includes(fieldPath);
+    
+    // Filter by search query
+    if (searchQuery && !key.toLowerCase().includes(searchQuery.toLowerCase()) && 
+        !String(value).toLowerCase().includes(searchQuery.toLowerCase())) {
+      return null;
+    }
+    
+    const renderActions = () => (
+      <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity duration-200">
+        <Tooltip title="Add filter">
+          <Button
+            type="text"
+            size="small"
+            icon={<FilterOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddFilter(fieldPath, value);
+            }}
+            className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 w-6 h-6"
+          />
+        </Tooltip>
+        
+        <Tooltip title="Copy value">
+          <Button
+            type="text"
+            size="small"
+            icon={<CopyOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopyValue(value);
+            }}
+            className="text-green-400 hover:text-green-300 hover:bg-green-900/20 w-6 h-6"
+          />
+        </Tooltip>
+        
+        <Tooltip title={isColumnAdded ? 'Remove from table' : 'Add to table'}>
+          <Button
+            type="text"
+            size="small"
+            icon={isColumnAdded ? <MinusOutlined /> : <PlusOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isColumnAdded && !isBaseColumn) {
+                handleRemoveColumn(fieldPath);
+              } else if (!isColumnAdded) {
+                handleAddColumn(fieldPath);
+              }
+            }}
+            disabled={isBaseColumn && isColumnAdded}
+            className={
+              isBaseColumn && isColumnAdded 
+                ? 'text-gray-600 w-6 h-6' 
+                : (isColumnAdded ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20 w-6 h-6' : 'text-orange-400 hover:text-orange-300 hover:bg-orange-900/20 w-6 h-6')
+            }
+          />
+        </Tooltip>
+      </div>
+    );
+    
+    if (value === null || value === undefined) {
+      return (
+        <div style={{ paddingLeft: indent }} className="flex items-center justify-between py-1 group hover:bg-gray-800/50 rounded px-2 -mx-2">
+          <div className="flex items-center">
+            <span className="text-gray-300 font-medium mr-3 cursor-pointer" onClick={() => handleCopyField(fieldPath)}>{key}</span>
+            <span className="text-gray-500 italic">null</span>
+            {isColumnAdded && <Tag color="success" size="small" className="ml-2">In Table</Tag>}
+          </div>
+          {renderActions()}
+        </div>
+      );
+    }
+
+    if (typeof value === 'boolean') {
+      return (
+        <div style={{ paddingLeft: indent }} className="flex items-center justify-between py-1 group hover:bg-gray-800/50 rounded px-2 -mx-2">
+          <div className="flex items-center">
+            <span className="text-gray-300 font-medium mr-3 cursor-pointer" onClick={() => handleCopyField(fieldPath)}>{key}</span>
+            <span className={value ? 'text-green-400' : 'text-red-400'}>{value ? 'true' : 'false'}</span>
+            {isColumnAdded && <Tag color="success" size="small" className="ml-2">In Table</Tag>}
+          </div>
+          {renderActions()}
+        </div>
+      );
+    }
+
+    if (typeof value === 'number') {
+      return (
+        <div style={{ paddingLeft: indent }} className="flex items-center justify-between py-1 group hover:bg-gray-800/50 rounded px-2 -mx-2">
+          <div className="flex items-center">
+            <span className="text-gray-300 font-medium mr-3 cursor-pointer" onClick={() => handleCopyField(fieldPath)}>{key}</span>
+            <span className="text-blue-400 font-mono">{value.toLocaleString()}</span>
+            {isColumnAdded && <Tag color="success" size="small" className="ml-2">In Table</Tag>}
+          </div>
+          {renderActions()}
+        </div>
+      );
+    }
+
+    if (typeof value === 'string') {
+      const truncatedValue = value.length > 60 ? `${value.substring(0, 60)}...` : value;
+      
+      return (
+        <div style={{ paddingLeft: indent }} className="flex items-center justify-between py-1 group hover:bg-gray-800/50 rounded px-2 -mx-2">
+          <div className="flex items-center min-w-0 flex-1">
+            <span className="text-gray-300 font-medium mr-3 cursor-pointer flex-shrink-0" onClick={() => handleCopyField(fieldPath)}>{key}</span>
+            <span className="text-green-400 break-words truncate">{truncatedValue}</span>
+            {isColumnAdded && <Tag color="success" size="small" className="ml-2 flex-shrink-0">In Table</Tag>}
+          </div>
+          {renderActions()}
+        </div>
+      );
+    }
+
+    if (value instanceof Date) {
+      return (
+        <div style={{ paddingLeft: indent }} className="flex items-center justify-between py-1 group hover:bg-gray-800/50 rounded px-2 -mx-2">
+          <div className="flex items-center">
+            <span className="text-gray-300 font-medium mr-3 cursor-pointer" onClick={() => handleCopyField(fieldPath)}>{key}</span>
+            <span className="text-orange-400 font-mono">{value.toISOString()}</span>
+            {isColumnAdded && <Tag color="success" size="small" className="ml-2">In Table</Tag>}
+          </div>
+          {renderActions()}
+        </div>
+      );
+    }
+
+    if (Array.isArray(value)) {
+      return (
+        <div>
+          <div style={{ paddingLeft: indent }} className="flex items-center justify-between py-1 group hover:bg-gray-800/50 rounded px-2 -mx-2">
+            <div className="flex items-center flex-1">
+              <span className="text-gray-300 font-medium mr-3 cursor-pointer" onClick={() => handleCopyField(fieldPath)}>{key}</span>
+              <span className="text-purple-400">[{value.length} items]</span>
+              {isColumnAdded && <Tag color="success" size="small" className="ml-2">In Table</Tag>}
+            </div>
+            <div className="flex items-center gap-1">
+              {renderActions()}
+              <Button
+                type="text"
+                size="small"
+                icon={isExpanded ? <DownOutlined /> : <RightOutlined />}
+                onClick={() => toggleExpanded(fieldPath)}
+                className="text-gray-400 hover:text-gray-300 w-4 h-4 flex-shrink-0 ml-1"
+              />
+            </div>
+          </div>
+          {isExpanded && (
+            <div>
+              {value.slice(0, 20).map((item, index) => (
+                <div key={index}>
+                  {renderTreeValue(index.toString(), item, level + 1, fieldPath)}
+                </div>
+              ))}
+              {value.length > 20 && (
+                <div style={{ paddingLeft: indent + 24 }} className="text-gray-500 py-1 text-sm">
+                  ... {value.length - 20} more items (collapse and expand to see more)
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (typeof value === 'object') {
+      const keys = Object.keys(value);
+      if (keys.length === 0) {
+        return (
+          <div style={{ paddingLeft: indent }} className="flex items-center justify-between py-1 group hover:bg-gray-800/50 rounded px-2 -mx-2">
+            <div className="flex items-center">
+              <span className="text-gray-300 font-medium mr-3 cursor-pointer" onClick={() => handleCopyField(fieldPath)}>{key}</span>
+              <span className="text-gray-500 italic">{'{}'}</span>
+              {isColumnAdded && <Tag color="success" size="small" className="ml-2">In Table</Tag>}
+            </div>
+            {renderActions()}
+          </div>
+        );
+      }
+
+      return (
+        <div>
+          <div style={{ paddingLeft: indent }} className="flex items-center justify-between py-1 group hover:bg-gray-800/50 rounded px-2 -mx-2">
+            <div className="flex items-center flex-1">
+              <span className="text-gray-300 font-medium mr-3 cursor-pointer" onClick={() => handleCopyField(fieldPath)}>{key}</span>
+              <span className="text-orange-400">{'{'}{keys.length} fields{'}'}</span>
+              {isColumnAdded && <Tag color="success" size="small" className="ml-2">In Table</Tag>}
+            </div>
+            <div className="flex items-center gap-1">
+              {renderActions()}
+              <Button
+                type="text"
+                size="small"
+                icon={isExpanded ? <DownOutlined /> : <RightOutlined />}
+                onClick={() => toggleExpanded(fieldPath)}
+                className="text-gray-400 hover:text-gray-300 w-4 h-4 flex-shrink-0 ml-1"
+              />
+            </div>
+          </div>
+          {isExpanded && (
+            <div>
+              {keys.map((subKey) => (
+                <div key={subKey}>
+                  {renderTreeValue(subKey, value[subKey], level + 1, fieldPath)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ paddingLeft: indent }} className="flex items-center justify-between py-1 group hover:bg-gray-800/50 rounded px-2 -mx-2">
+        <div className="flex items-center">
+          <span className="text-gray-300 font-medium mr-3 cursor-pointer" onClick={() => handleCopyField(fieldPath)}>{key}</span>
+          <span className="text-gray-400">{String(value)}</span>
+          {isColumnAdded && <Tag color="success" size="small" className="ml-2">In Table</Tag>}
+        </div>
+        {renderActions()}
+      </div>
+    );
+  };
+
+  const hasSearchResults = () => {
+    if (!searchQuery) return true;
+    
+    const checkValue = (obj: any, path: string = ''): boolean => {
+      if (obj === null || obj === undefined) return false;
+      
+      if (typeof obj !== 'object') {
+        return path.toLowerCase().includes(searchQuery.toLowerCase()) || 
+               String(obj).toLowerCase().includes(searchQuery.toLowerCase());
+      }
+      
+      if (Array.isArray(obj)) {
+        return obj.some((item, index) => checkValue(item, `${path}.${index}`));
+      }
+      
+      return Object.entries(obj).some(([key, value]) => 
+        checkValue(value, path ? `${path}.${key}` : key)
+      );
+    };
+    
+    return checkValue(data);
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Search and Controls */}
-      <Card size="small" className="border-l-4 border-l-blue-500">
-        <Row gutter={[16, 16]} align="middle">
-          <Col flex="auto">
-            <Search
-              placeholder="Search fields and values..."
-              allowClear
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full"
-              prefix={<SearchOutlined />}
-            />
-          </Col>
-          <Col>
-            <Space>
-              <Badge count={filteredFields.length} showZero>
-                <Button icon={<EyeOutlined />} size="small">
-                  Fields
-                </Button>
-              </Badge>
-              <Badge count={selectedFields.length} showZero>
-                <Button icon={<BookOutlined />} size="small">
-                  Selected
-                </Button>
-              </Badge>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* Fields Display */}
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {filteredFields.map(([field, value], index) => {
-          const { type, icon, color } = getFieldType(value);
-          const isColumnAdded = existingColumns.includes(field);
-          const isBaseColumn = baseColumns.includes(field);
-          const canRemove = isColumnAdded && !isBaseColumn;
-
-          return (
-            <Card 
-              key={field} 
+    <div className="flex flex-col h-full">
+      {/* Search Bar */}
+      <div className="mb-4 p-3 bg-gray-750 rounded-lg border border-gray-600">
+        <Input
+          placeholder="Search records... (e.g., status:active, user.name:John, tags:premium)"
+          prefix={<SearchOutlined className="text-gray-400 text-lg mr-1" />}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          allowClear
+          className="enterprise-search"
+          style={{ 
+            height: '40px',
+            borderRadius: '8px',
+            fontSize: '14px',
+            backgroundColor: '#1f2937',
+            border: 'none',
+            color: '#e5e7eb',
+            boxShadow: 'none',
+            transition: 'all 0.2s ease-in-out'
+          }}
+        />
+        <div className="flex items-center justify-between mt-2 text-sm text-gray-400">
+          <span>Click field names to copy • Hover for actions</span>
+          <Space>
+            <Button 
               size="small" 
-              className="transition-all duration-200 hover:shadow-md border-l-4 hover:border-l-blue-400"
-              style={{ borderLeftColor: color }}
+              onClick={() => setExpandedFields(new Set())}
+              className="text-gray-400 hover:text-white"
             >
-              <Row gutter={[12, 8]} align="top">
-                {/* Field Info */}
-                <Col flex="auto">
-                  <div className="space-y-2">
-                    {/* Field Header */}
-                    <Flex justify="space-between" align="center">
-                      <Space size="small">
-                        <span style={{ color }}>{icon}</span>
-                        <Tooltip title="Click to copy field name">
-                          <Text 
-                            strong 
-                            className="cursor-pointer hover:text-blue-500 font-mono text-sm"
-                            onClick={() => handleCopyField(field)}
-                          >
-                            {field}
-                          </Text>
-                        </Tooltip>
-                        <Tag color={color} className="text-xs">
-                          {type}
-                        </Tag>
-                      </Space>
-                    </Flex>
-
-                    {/* Field Value */}
-                    <div className="pl-6 border-l-2 border-gray-100 dark:border-gray-700">
-                      {renderValue(value)}
-                    </div>
-                  </div>
-                </Col>
-
-                {/* Controls */}
-                <Col>
-                  <Space direction="vertical" size="small">
-                    <Space size="small">
-                      <Tooltip title="Add filter">
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<FilterOutlined />}
-                          onClick={() => handleAddFilter(field, value)}
-                          className="text-blue-500 hover:text-blue-700"
-                        />
-                      </Tooltip>
-                      
-                      <Tooltip title="Copy value">
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<CopyOutlined />}
-                          onClick={() => handleCopyValue(value)}
-                          className="text-green-500 hover:text-green-700"
-                        />
-                      </Tooltip>
-                      
-                      <Tooltip title={
-                        isBaseColumn && isColumnAdded 
-                          ? 'Base column - cannot be removed' 
-                          : (canRemove ? 'Remove from table' : 'Add to table')
-                      }>
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={isColumnAdded ? <MinusOutlined /> : <PlusOutlined />}
-                          onClick={() => {
-                            if (isColumnAdded && !isBaseColumn) {
-                              handleRemoveColumn(field);
-                            } else if (!isColumnAdded) {
-                              handleAddColumn(field);
-                            }
-                          }}
-                          disabled={isBaseColumn && isColumnAdded}
-                          className={
-                            isBaseColumn && isColumnAdded 
-                              ? 'text-gray-400' 
-                              : (canRemove ? 'text-red-500 hover:text-red-700' : 'text-orange-500 hover:text-orange-700')
-                          }
-                        />
-                      </Tooltip>
-                    </Space>
-                    
-                    {isColumnAdded && (
-                      <Tag color="success" className="text-xs">
-                        In Table
-                      </Tag>
-                    )}
-                  </Space>
-                </Col>
-              </Row>
-            </Card>
-          );
-        })}
+              Collapse All
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => {
+                const expandAll = (obj: any, path: string = '', set: Set<string> = new Set()): Set<string> => {
+                  if (obj && typeof obj === 'object') {
+                    if (Array.isArray(obj)) {
+                      set.add(path);
+                      obj.forEach((item, index) => {
+                        const newPath = path ? `${path}.${index}` : index.toString();
+                        expandAll(item, newPath, set);
+                      });
+                    } else {
+                      set.add(path);
+                      Object.entries(obj).forEach(([key, value]) => {
+                        const newPath = path ? `${path}.${key}` : key;
+                        expandAll(value, newPath, set);
+                      });
+                    }
+                  }
+                  return set;
+                };
+                setExpandedFields(expandAll(data));
+              }}
+              className="text-gray-400 hover:text-white"
+            >
+              Expand All
+            </Button>
+          </Space>
+        </div>
       </div>
 
-      {filteredFields.length === 0 && searchQuery && (
-        <div className="text-center py-8 text-gray-500">
-          <SearchOutlined className="text-3xl mb-2" />
-          <p>No fields match your search</p>
-          <p className="text-sm">Try a different search term</p>
+      {/* Tree View */}
+      <div className="bg-gray-900 text-white p-4 rounded-lg flex-1 overflow-y-auto border border-gray-700" style={{ height: 'calc(100vh - 300px)' }}>
+        <div className="font-mono text-sm space-y-1">
+          {data && typeof data === 'object' && !Array.isArray(data) ? (
+            Object.entries(data).map(([key, value]) => (
+              <div key={key}>
+                {renderTreeValue(key, value)}
+              </div>
+            ))
+          ) : (
+            <div>
+              {renderTreeValue(fieldName || 'value', data)}
+            </div>
+          )}
+          
+          {searchQuery && !hasSearchResults() && (
+            <div className="text-center py-8 text-gray-500">
+              <SearchOutlined className="text-3xl mb-2" />
+              <p>No fields match your search</p>
+              <p className="text-sm">Try a different search term</p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

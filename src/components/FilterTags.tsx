@@ -22,32 +22,21 @@ const FilterTags: React.FC<FilterTagsProps> = ({
   }
 
   return (
-    <div style={{ 
-      marginBottom: '16px', 
-      padding: '12px', 
-      backgroundColor: 'var(--bg-secondary)', 
-      borderRadius: '6px',
-      border: '1px solid var(--border-color)'
-    }}>
+    <div className="mb-4">
       {filters.length > 0 && (
-        <div style={{ marginBottom: additionalColumns.length > 0 ? '12px' : 0 }}>
-          <Text strong style={{ marginRight: '8px', color: 'var(--text-primary)' }}>
-            Active Filters:
-          </Text>
-          <Space size={[0, 8]} wrap>
+        <div className={additionalColumns.length > 0 ? 'mb-4' : ''}>
+          <div className="flex items-center gap-2 mb-3">
+            <Text className="text-sm text-gray-300 font-medium">Active Filters:</Text>
+            <div className="h-4 w-px bg-gray-600"></div>
+            <Text className="text-xs text-gray-500">{filters.length} filter{filters.length !== 1 ? 's' : ''}</Text>
+          </div>
+          <Space size={[6, 6]} wrap>
             {filters.map((filter, index) => (
               <Tag
                 key={`${filter.field}-${index}`}
                 closable
                 onClose={() => onRemove(index)}
-                color="blue"
-                style={{ 
-                  margin: '2px',
-                  backgroundColor: 'var(--accent-color)',
-                  borderColor: 'var(--accent-color)',
-                  color: 'white',
-                  fontWeight: '500'
-                }}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 text-white border-blue-500 hover:from-blue-700 hover:to-blue-800 rounded-md px-3 py-1 text-sm font-medium shadow-sm transition-all duration-200"
               >
                 {filter.label}
               </Tag>
@@ -58,23 +47,18 @@ const FilterTags: React.FC<FilterTagsProps> = ({
       
       {additionalColumns.length > 0 && (
         <div>
-          <Text strong style={{ marginRight: '8px', color: 'var(--text-primary)' }}>
-            Custom Columns:
-          </Text>
-          <Space size={[0, 8]} wrap>
+          <div className="flex items-center gap-2 mb-3">
+            <Text className="text-sm text-gray-300 font-medium">Custom Columns:</Text>
+            <div className="h-4 w-px bg-gray-600"></div>
+            <Text className="text-xs text-gray-500">{additionalColumns.length} column{additionalColumns.length !== 1 ? 's' : ''}</Text>
+          </div>
+          <Space size={[6, 6]} wrap>
             {additionalColumns.map((column) => (
               <Tag
                 key={column.key}
                 closable
                 onClose={() => onRemoveColumn(column.key)}
-                color="green"
-                style={{ 
-                  margin: '2px',
-                  backgroundColor: 'var(--success-color)',
-                  borderColor: 'var(--success-color)',
-                  color: 'white',
-                  fontWeight: '500'
-                }}
+                className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 hover:from-emerald-700 hover:to-emerald-800 rounded-md px-3 py-1 text-sm font-medium shadow-sm transition-all duration-200"
               >
                 {column.title}
               </Tag>

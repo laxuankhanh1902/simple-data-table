@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { Button, message } from 'antd';
-import { EyeOutlined, EyeInvisibleOutlined, FilterOutlined } from '@ant-design/icons';
+import { Button, message, Input, Space } from 'antd';
+import { EyeOutlined, EyeInvisibleOutlined, FilterOutlined, SearchOutlined, CopyOutlined } from '@ant-design/icons';
 import type { DataRow, Filter } from '../types';
 import { generateFilterLabel } from '../utils/dataUtils';
 
@@ -79,6 +79,8 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
     return new Set(allKeys);
   });
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   const toggleExpanded = useCallback((key: string) => {
     setExpandedKeys(prev => {
       const newSet = new Set(prev);
@@ -89,6 +91,27 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
       }
       return newSet;
     });
+  }, []);
+
+  const handleCopyValue = useCallback((value: any) => {
+    try {
+      const textValue = typeof value === 'object' 
+        ? JSON.stringify(value, null, 2)
+        : String(value);
+      navigator.clipboard.writeText(textValue);
+      message.success('Value copied to clipboard');
+    } catch (error) {
+      message.error('Failed to copy value');
+    }
+  }, []);
+
+  const handleCopyField = useCallback((field: string) => {
+    try {
+      navigator.clipboard.writeText(field);
+      message.success('Field name copied to clipboard');
+    } catch (error) {
+      message.error('Failed to copy field name');
+    }
   }, []);
 
   const handleQuickFilter = useCallback((field: string, value: any) => {
@@ -210,6 +233,26 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
           {field && (
             <>
               {renderFilterButton(field, value)}
+              <Button
+                size="small"
+                type="text"
+                icon={<CopyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyValue(value);
+                }}
+                style={{ 
+                  fontSize: '10px', 
+                  padding: '1px 3px',
+                  color: '#10b981',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  minWidth: '16px',
+                  height: '16px',
+                  marginLeft: '2px'
+                }}
+                title="Copy value"
+              />
               {renderColumnButton(field)}
             </>
           )}
@@ -224,6 +267,26 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
           {field && (
             <>
               {renderFilterButton(field, value)}
+              <Button
+                size="small"
+                type="text"
+                icon={<CopyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyValue(value);
+                }}
+                style={{ 
+                  fontSize: '10px', 
+                  padding: '1px 3px',
+                  color: '#10b981',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  minWidth: '16px',
+                  height: '16px',
+                  marginLeft: '2px'
+                }}
+                title="Copy value"
+              />
               {renderColumnButton(field)}
             </>
           )}
@@ -238,6 +301,26 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
           {field && (
             <>
               {renderFilterButton(field, value)}
+              <Button
+                size="small"
+                type="text"
+                icon={<CopyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyValue(value);
+                }}
+                style={{ 
+                  fontSize: '10px', 
+                  padding: '1px 3px',
+                  color: '#10b981',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  minWidth: '16px',
+                  height: '16px',
+                  marginLeft: '2px'
+                }}
+                title="Copy value"
+              />
               {renderColumnButton(field)}
             </>
           )}
@@ -252,6 +335,26 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
           {field && (
             <>
               {renderFilterButton(field, value)}
+              <Button
+                size="small"
+                type="text"
+                icon={<CopyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyValue(value);
+                }}
+                style={{ 
+                  fontSize: '10px', 
+                  padding: '1px 3px',
+                  color: '#10b981',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  minWidth: '16px',
+                  height: '16px',
+                  marginLeft: '2px'
+                }}
+                title="Copy value"
+              />
               {renderColumnButton(field)}
             </>
           )}
@@ -275,6 +378,26 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
           {field && (
             <>
               {renderFilterButton(field, value)}
+              <Button
+                size="small"
+                type="text"
+                icon={<CopyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyValue(value);
+                }}
+                style={{ 
+                  fontSize: '10px', 
+                  padding: '1px 3px',
+                  color: '#10b981',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  minWidth: '16px',
+                  height: '16px',
+                  marginLeft: '2px'
+                }}
+                title="Copy value"
+              />
               {renderColumnButton(field)}
             </>
           )}
@@ -311,6 +434,26 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
           {field && (
             <>
               {renderFilterButton(field, value)}
+              <Button
+                size="small"
+                type="text"
+                icon={<CopyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyValue(value);
+                }}
+                style={{ 
+                  fontSize: '10px', 
+                  padding: '1px 3px',
+                  color: '#10b981',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  minWidth: '16px',
+                  height: '16px',
+                  marginLeft: '2px'
+                }}
+                title="Copy value"
+              />
               {renderColumnButton(field)}
             </>
           )}
@@ -344,6 +487,26 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
           {field && (
             <>
               {renderFilterButton(field, value)}
+              <Button
+                size="small"
+                type="text"
+                icon={<CopyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyValue(value);
+                }}
+                style={{ 
+                  fontSize: '10px', 
+                  padding: '1px 3px',
+                  color: '#10b981',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  minWidth: '16px',
+                  height: '16px',
+                  marginLeft: '2px'
+                }}
+                title="Copy value"
+              />
               {renderColumnButton(field)}
             </>
           )}
@@ -377,6 +540,26 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
           {field && (
             <>
               {renderFilterButton(field, value)}
+              <Button
+                size="small"
+                type="text"
+                icon={<CopyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyValue(value);
+                }}
+                style={{ 
+                  fontSize: '10px', 
+                  padding: '1px 3px',
+                  color: '#10b981',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  minWidth: '16px',
+                  height: '16px',
+                  marginLeft: '2px'
+                }}
+                title="Copy value"
+              />
               {renderColumnButton(field)}
             </>
           )}
@@ -422,15 +605,67 @@ const InteractiveJSON: React.FC<InteractiveJSONProps> = ({
   }));
 
   return (
-    <div 
-      className="font-mono text-xs p-4 max-h-[70vh] overflow-auto rounded border"
-      style={{
-        backgroundColor: 'var(--panel-bg)',
-        borderColor: 'var(--border-color)',
-        color: 'var(--text-color)'
-      }}
-    >
-      {renderValue(processedData, '', 0)}
+    <div className="flex flex-col h-full">
+      {/* Search and Controls */}
+      <div className="mb-4 p-3 bg-gray-750 rounded-lg border border-gray-600">
+        <Input
+          placeholder="Search records... (e.g., status:active, user.name:John, tags:premium)"
+          prefix={<SearchOutlined className="text-gray-400 text-lg mr-1" />}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          allowClear
+          className="enterprise-search"
+          style={{ 
+            height: '40px',
+            borderRadius: '8px',
+            fontSize: '14px',
+            backgroundColor: '#1f2937',
+            border: 'none',
+            color: '#e5e7eb',
+            boxShadow: 'none',
+            transition: 'all 0.2s ease-in-out'
+          }}
+        />
+        <div className="flex items-center justify-between mt-2 text-sm text-gray-400">
+          <span>Click keys to filter • Hover for actions</span>
+          <Space>
+            <Button 
+              size="small" 
+              onClick={() => setExpandedKeys(new Set())}
+              className="text-gray-400 hover:text-white"
+            >
+              Collapse All
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => setExpandedKeys(new Set(generateAllKeys(processedData)))}
+              className="text-gray-400 hover:text-white"
+            >
+              Expand All
+            </Button>
+            <Button 
+              size="small" 
+              onClick={() => {
+                const jsonString = JSON.stringify(processedData, null, 2);
+                navigator.clipboard.writeText(jsonString);
+                message.success('JSON copied to clipboard');
+              }}
+              icon={<CopyOutlined />}
+              className="text-gray-400 hover:text-white"
+            >
+              Copy JSON
+            </Button>
+          </Space>
+        </div>
+      </div>
+
+      {/* JSON View */}
+      <div 
+        className="font-mono text-sm p-4 flex-1 overflow-auto rounded-lg border bg-gray-900 text-white"
+        style={{ height: 'calc(100vh - 300px)' }}
+      >
+        {renderValue(processedData, '', 0)}
+      </div>
     </div>
   );
 };
